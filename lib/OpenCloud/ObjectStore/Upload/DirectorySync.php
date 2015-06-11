@@ -35,6 +35,12 @@ class DirectorySync
      * @var string The path to the directory you're syncing.
      */
     private $basePath;
+	
+	/**
+	 * @var string The path within the container's directory to sync to.
+	 */
+	private $containerPath;
+	
     /**
      * @var ResourceIterator A collection of remote files in Swift.
      */
@@ -48,13 +54,15 @@ class DirectorySync
      * Basic factory method to instantiate a new DirectorySync object with all the appropriate properties.
      *
      * @param           $path      The local path
+	 * @param			$toPath	   To a path within the container
      * @param Container $container The container you're syncing
      * @return DirectorySync
      */
-    public static function factory($path, Container $container)
+    public static function factory($path, $toPath, Container $container)
     {
         $transfer = new self();
         $transfer->setBasePath($path);
+        $transfer->setContainerPath($toPath);
         $transfer->setContainer($container);
         $transfer->setRemoteFiles($container->objectList());
 
@@ -72,6 +80,15 @@ class DirectorySync
         }
 
         $this->basePath = $path;
+    }
+
+    /**
+     * @param $path
+     * @throws \OpenCloud\Common\Exceptions\InvalidArgumentError
+     */
+    public function setContainerPath($path)
+    {
+        $this->containerPath = $path;
     }
 
     /**
@@ -112,8 +129,8 @@ class DirectorySync
 
         // Handle PUT requests (create/update files)
         foreach ($localFiles as $filename) {
-            $callback = $this->getCallback($filename);
-            $filePath = rtrim($this->basePath, '/') . '/' . $filename;
+            $callback = $this->getCallback(rtrim($this->containerPath, '/') : '') . '/' . $filename);
+            $filePath = rtrim($this->basePath, '/') . '/'. (!empty($this->containerPath) ? rtrim($this->containerPath, '/') : '') . '/' . $filename;
 
             if (!is_readable($filePath)) {
                 continue;
@@ -133,7 +150,7 @@ class DirectorySync
             } else {
                 // upload new file
                 $url = clone $this->container->getUrl();
-                $url->addPath($filename);
+                $url->addPath((!empty($this->containerPath) ? rtrim($this->containerPath, '/') : '') .$filename);
 
                 $requests[] = $this->container->getClient()->put($url, array(), $entityBody);
             }

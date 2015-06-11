@@ -571,10 +571,11 @@ class Container extends AbstractContainer
      * Upload the contents of a local directory to a remote container, effectively syncing them.
      *
      * @param $path The local path to the directory.
+     * @param $toPath The path to the container directory.
      */
-    public function uploadDirectory($path)
+    public function uploadDirectory($path, $toPath = '')
     {
-        $sync = DirectorySync::factory($path, $this);
+        $sync = DirectorySync::factory($path, $toPath, $this);
         $sync->execute();
     }
 
